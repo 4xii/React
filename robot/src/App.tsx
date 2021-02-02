@@ -1,7 +1,8 @@
-import React from 'react';
+import React,{useState,useEffect} from 'react';
 import logo from './assets/images/logo.svg';
 import robots from './mockdata/robots.json';
 import Robot from "./components/Robot";
+import RobotDiscount from "./components/RobotDiscount";
 import styles from './App.module.css';
 import ShoppingCart from './components/ShoppingCart'
 
@@ -11,51 +12,67 @@ interface State{
   robotGallery:any[];
 }
 
-class App extends React.Component<Props,State> {
-  constructor(props:any){
-    super(props);
-    this.state = {
-      robotGallery:[],
+const App : React.FC = (prop) => {
+
+  const [count,setCount] = useState<number>(0)
+  const [robotGallery,setRobotGallery] = useState<any>([])
+  const [loading,setLoading] = useState<boolean>(false);
+  const [error,setError] = useState<string>();
+
+  useEffect(() => {
+    document.title = `点击${count}次`
+  }, [count])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const responses = await fetch("https://jsonplaceholder.typicode.com/users")
+        // .then(response => response.json())
+        // .then(data => setRobotGallery(data))
+        const data = await responses.json()
+        setRobotGallery(data)
+      } catch (e) {
+        setError(e.message)
+      }
+      setLoading(false);
     };
-  }
 
-  componentDidMount(){
-    fetch("https://jsonplaceholder.typicode.com/users")
-    .then(response => response.json())
-    .then(data => this.setState({ robotGallery:data }));
-  }
+    fetchData();
 
-  // * 生命周期第二阶段：更新
-  //在组件接受到一个新的prop(更新后)时被调用
-  //componentWillReceiveProps
-  //state getDerivedStateFromProps(nextProps,prevState){}//探测state props是否发生变化
-  //shouldComponentUpdate(nextProps,nextState){//判断组件是否需要被更新
-  //  return nextState.some !== this.state.some
-  //}
-  //组件更新后调用
-  componentDidUpdate(){}
-  
-  // * 生命周期第三阶段：销毁  回收内存 删除事件监听
-  //组件销毁后调用
-  //可以当作析构函数 destructor 来使用
-  componentWillUnmount(){}
-  
-  render() {
+  }, [])
+
     return (
       <div className={styles.app}>
       <div className={styles.appHeader}>
         <img src={logo} className={styles.appLogo} alt="logo"/>
         <h1>猪猪机器人ROBOT购物平台哟</h1>
       </div>
+      <button
+        onClick={()=>{
+          setCount(count + 1)
+        }}
+      >
+        Click
+      </button>
+      <span>count:{count}</span>
       <ShoppingCart />
-      <div className={styles.robotList}>
-        {this.state.robotGallery.map((r) => (
-          <Robot id={r.id} email={r.email} name={r.name} />
-        ))}
-      </div>
+      {(error || error!=="")&& <div>网站出错:{error}</div>}
+      { !loading ? 
+        <div className={styles.robotList}>
+          {robotGallery.map((r:any,index:number) => 
+            index % 2 ==0 ? (
+              <RobotDiscount id={r.id} email={r.email} name={r.name} />
+            )
+            :(
+              <Robot id={r.id} email={r.email} name={r.name} />
+            )
+          )} 
+        </div>
+        :<h2>loading加载中</h2>
+      }
     </div>
     )
-  };
 }
 
 export default App;
